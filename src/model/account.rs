@@ -121,8 +121,8 @@ impl Account {
                             }
                         }
                         DisputeState::ChargeBack => {
-                            //chargeback only if duspute is initiated, lock accout afterwards
-                            //not sure if we want to perform chargeback if there is not sufficent
+                            //chargeback only if dispute is initiated, lock account afterwards
+                            //not sure if we want to perform chargeback if there is not sufficient
                             //amount, but my gut feeling is that we should perform it, even if the
                             //total becomes less than 0
                             match prev_tx.dispute {
@@ -156,7 +156,7 @@ impl Account {
 pub enum TxError {
     #[error("account locked: {0:?}")]
     AccountLocked(ClientId),
-    #[error("insufficent funds")]
+    #[error("insufficient funds")]
     InsufficientFunds(TransactionId),
     #[error("transaction not found: {0:?}")]
     TransactionNotFound(TransactionId),
@@ -196,7 +196,7 @@ mod tests {
         //check balance
         assert_eq!(acc.balance(), Amount::from(10));
 
-        //try to withdraw more than the avaiable amount
+        //try to withdraw more than the available amount
         let res = acc.process(
             Tx {
                 transaction_id: 2,
@@ -216,7 +216,7 @@ mod tests {
             },
             &mut store,
         )
-        .expect("witdhraw should succeed");
+        .expect("withdraw should succeed");
         assert_eq!(acc.balance(), Amount::from(5));
         assert_eq!(acc.total(), Amount::from(5));
         assert_eq!(acc.held(), Amount::from(0));
@@ -241,7 +241,7 @@ mod tests {
             },
             &mut store,
         )
-        .expect("disput should be processed");
+        .expect("dispute should be processed");
 
         assert_eq!(acc.balance(), Amount::from(0));
         assert_eq!(acc.held(), Amount::from(5));
@@ -296,7 +296,7 @@ mod tests {
             ))
         );
 
-        //try to perform dispure for transaction 1
+        //try to perform dispute for transaction 1
         acc.process(
             Tx {
                 transaction_id: 1,
@@ -335,7 +335,7 @@ mod tests {
             &mut store,
         );
         assert_eq!(res, Err(TxError::AccountLocked(12)));
-        //accout amounts should stay the same
+        //account amounts should stay the same
         assert_eq!(acc.balance(), Amount::from(-5));
         assert_eq!(acc.total(), Amount::from(-5));
         assert_eq!(acc.held(), Amount::from(0));

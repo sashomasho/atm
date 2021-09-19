@@ -7,9 +7,10 @@ use super::model::{
     ClientId, TransactionId, Tx, TxRecord,
 };
 
+/// Stores and process accounts and transactions
 pub struct TransactionDB<T: TransactionStore, A: AccountStore> {
-    pub accounts: A,
-    pub transactions: T,
+    accounts: A,
+    transactions: T,
 }
 
 impl<T: TransactionStore, A: AccountStore> TransactionDB<T, A> {
@@ -19,8 +20,13 @@ impl<T: TransactionStore, A: AccountStore> TransactionDB<T, A> {
             transactions: transaction_store,
         }
     }
+
+    pub fn accounts(&self) -> A::IteratorType {
+        self.accounts.accounts()
+    }
 }
 
+/// Simple trait for working with accounts
 pub trait AccountStore {
     type IteratorType;
     fn get_account_mut(&mut self, client_id: &ClientId) -> Option<&mut Account>;
@@ -28,6 +34,7 @@ pub trait AccountStore {
     fn accounts(&self) -> Self::IteratorType;
 }
 
+/// Simple trait for working with transactions
 pub trait TransactionStore {
     fn add(&mut self, id: TransactionId, record: TxRecord) -> Result<(), TransactionStoreError>;
 
@@ -54,8 +61,8 @@ impl<T: TransactionStore, A: AccountStore> TransactionDB<T, A> {
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum TransactionStoreError {
-    #[error("integrity error")]
-    IntegrityError,
-    #[error("transaction already exists")]
-    TransactionAlreadyExists,
+    #[error("client mismatch: {0:?} != {1:?}")]
+    ClientMismatch(ClientId, ClientId),
+    #[error("transaction already exists({0:?})")]
+    TransactionAlreadyExists(TransactionId),
 }

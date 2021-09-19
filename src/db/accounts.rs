@@ -5,7 +5,7 @@ use crate::model::{account::Account, ClientId};
 use super::AccountStore;
 
 pub struct AccountsIter {
-    //TODO borrow accounts
+    //TODO borrow accounts from HashMap values iterator
     accounts: Vec<Account>,
 }
 
@@ -19,6 +19,8 @@ impl IntoIterator for AccountsIter {
 }
 
 impl AccountStore for HashMap<ClientId, Account> {
+    type IteratorType = AccountsIter;
+
     fn get_account_mut(&mut self, client_id: &ClientId) -> Option<&mut Account> {
         self.get_mut(client_id)
     }
@@ -32,6 +34,4 @@ impl AccountStore for HashMap<ClientId, Account> {
             accounts: self.values().into_iter().cloned().collect(),
         }
     }
-
-    type IteratorType = AccountsIter;
 }
