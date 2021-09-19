@@ -65,7 +65,6 @@ impl Account {
         match tx.operation {
             //always allow
             TxOperation::Deposit(amount) => {
-                self.total += amount;
                 store.add(
                     tx.transaction_id,
                     TxRecord {
@@ -74,14 +73,13 @@ impl Account {
                         client_id: self.client_id,
                     },
                 )?;
+                self.total += amount;
             }
             TxOperation::Withdraw(amount) => {
-                //allow only if balance >= amount
                 let balance = self.balance();
                 if amount > balance {
                     return Err(TxError::InsufficientFunds(tx.transaction_id));
                 }
-                self.total -= amount;
                 store.add(
                     tx.transaction_id,
                     TxRecord {
@@ -90,6 +88,7 @@ impl Account {
                         client_id: self.client_id,
                     },
                 )?;
+                self.total -= amount;
             }
             TxOperation::Dispute(new_dispute) => {
                 match store.get_tx_mut(&self.client_id, &tx.transaction_id)? {
@@ -175,6 +174,7 @@ mod tests {
     };
 
     use super::Account;
+    use crate::db::TransactionStoreError;
 
     #[test]
     fn test_processing() {
@@ -220,6 +220,19 @@ mod tests {
         assert_eq!(acc.balance(), Amount::from(5));
         assert_eq!(acc.total(), Amount::from(5));
         assert_eq!(acc.held(), Amount::from(0));
+
+        //try to withdraw a lower amount with the same transaction id
+        let res = acc.process(
+            Tx {
+                transaction_id: 3,
+                client_id: 12,
+                operation: TxOperation::Withdraw(Amount::from(1)),
+            },
+            &mut store,
+        );
+        assert_eq!(res, Err(TxError::IntegrityError(TransactionStoreError::TransactionAlreadyExists(3))));
+        assert_eq!(acc.balance(), Amount::from(5));
+        assert_eq!(acc.total(), Amount::from(5));
 
         //try to dispute transaction 2, which was not successful
         let res = acc.process(

@@ -36,6 +36,7 @@ pub struct Tx {
 }
 
 /// Each TxRecord is constructed with one of the following: Deposit or Withdraw
+#[derive(Debug)]
 pub enum TxRecordType {
     Deposit(Amount),
     Withdraw(Amount),
@@ -43,6 +44,7 @@ pub enum TxRecordType {
 
 /// TxRecord is the main entity responsible for the lifecycle of the transaction,
 /// once created with TxRecordType it can be further modified by setting `dispute` field
+#[derive(Debug)]
 pub struct TxRecord {
     pub origin: TxRecordType,
     pub client_id: ClientId,
