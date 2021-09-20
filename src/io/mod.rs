@@ -47,11 +47,11 @@ pub fn print_results<'a>(
     account_iter: impl Iterator<Item = &'a Account>,
 ) {
     let mut writer = WriterBuilder::new().from_writer(writer);
+    let scale = |mut amount: Amount| -> Amount {
+        amount.rescale(4);
+        amount
+    };
     for acc in account_iter {
-        let scale = |mut amount: Amount| -> Amount {
-            amount.rescale(4);
-            amount
-        };
         let record = Record {
             client_id: acc.client(),
             balance: scale(acc.balance()),
