@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use thiserror::Error;
 mod accounts;
 mod transactions;
@@ -8,30 +10,33 @@ use super::model::{
 };
 
 /// Stores and process accounts and transactions
-pub struct TransactionDB<T: TransactionStore, A: AccountStore> {
+pub struct TransactionDB<'a, T: TransactionStore, A: AccountStore<'a>> {
     accounts: A,
     transactions: T,
+    //we need 'a captured by one of the fields here
+    _phantom_data: PhantomData<&'a ()>,
 }
 
-impl<T: TransactionStore, A: AccountStore> TransactionDB<T, A> {
+impl<'a, T: TransactionStore, A: AccountStore<'a>> TransactionDB<'a, T, A> {
     pub fn new(transaction_store: T, account_store: A) -> Self {
         TransactionDB {
             accounts: account_store,
             transactions: transaction_store,
+            _phantom_data: PhantomData,
         }
     }
 
-    pub fn accounts(&self) -> A::IteratorType {
+    pub fn accounts(&'a self) -> A::IteratorType {
         self.accounts.accounts()
     }
 }
 
 /// Simple trait for working with accounts
-pub trait AccountStore {
-    type IteratorType;
+pub trait AccountStore<'a> {
+    type IteratorType: 'a;
     fn get_account_mut(&mut self, client_id: &ClientId) -> Option<&mut Account>;
     fn add_account(&mut self, client_id: ClientId, account: Account) -> &mut Account;
-    fn accounts(&self) -> Self::IteratorType;
+    fn accounts(&'a self) -> Self::IteratorType;
 }
 
 /// Simple trait for working with transactions
@@ -45,7 +50,7 @@ pub trait TransactionStore {
     ) -> Result<Option<&mut TxRecord>, TransactionStoreError>;
 }
 
-impl<T: TransactionStore, A: AccountStore> TransactionDB<T, A> {
+impl<'a, T: TransactionStore, A: AccountStore<'a>> TransactionDB<'a, T, A> {
     pub fn add(&mut self, tx: Tx) -> Result<(), TxError> {
         let account = match self.accounts.get_account_mut(&tx.client_id) {
             Some(acc) => acc,

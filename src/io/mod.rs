@@ -7,11 +7,11 @@ use crate::{
     model::{account::Account, input::TxRow, output::Record, Amount, Tx},
 };
 
-pub fn read_csv_data<R, T, A>(reader: R, db: &mut TransactionDB<T, A>)
+pub fn read_csv_data<'a, R, T, A>(reader: R, db: &mut TransactionDB<'a, T, A>)
 where
     R: std::io::Read,
     T: TransactionStore,
-    A: AccountStore,
+    A: AccountStore<'a>,
 {
     let mut reader = ReaderBuilder::new()
         .flexible(true)
@@ -42,7 +42,10 @@ where
     }
 }
 
-pub fn print_results(writer: impl std::io::Write, account_iter: impl Iterator<Item = Account>) {
+pub fn print_results<'a>(
+    writer: impl std::io::Write,
+    account_iter: impl Iterator<Item = &'a Account>,
+) {
     let mut writer = WriterBuilder::new().from_writer(writer);
     for acc in account_iter {
         let scale = |mut amount: Amount| -> Amount {
